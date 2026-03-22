@@ -47,6 +47,7 @@ async def activities_tree(
 )
 async def organizations_by_activity(
     activity_id: int,
+    direct_only: bool = Query(False),
     limit: int = Query(10, ge=1),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -55,11 +56,16 @@ async def organizations_by_activity(
     if activity is None:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    root_path_sq = (
-        select(Activity.path)
-        .where(Activity.id == activity_id)
-        .scalar_subquery()
-    )
+    if direct_only:
+        activity_filter = Activity.id == activity_id
+    else:
+        # тут находим по пути всех детей Activity
+        root_path_sq = (
+            select(Activity.path)
+            .where(Activity.id == activity_id)
+            .scalar_subquery()
+        )
+        activity_filter = Activity.path.op("<@")(root_path_sq)
 
     count_stmt = (
         select(func.count(func.distinct(Organization.id)))
@@ -69,7 +75,7 @@ async def organizations_by_activity(
             Organization.id == organization_activity.c.organization_id,
         )
         .join(Activity, Activity.id == organization_activity.c.activity_id)
-        .where(Activity.path.op("<@")(root_path_sq))
+        .where(activity_filter)
     )
     total = (await db.execute(count_stmt)).scalar_one()
 
@@ -88,8 +94,7 @@ async def organizations_by_activity(
             Organization.id == organization_activity.c.organization_id,
         )
         .join(Activity, Activity.id == organization_activity.c.activity_id)
-        # тут находим по пути находим всех предков
-        .where(Activity.path.op("<@")(root_path_sq))
+        .where(activity_filter)
         .distinct()
         .order_by(Organization.name)
         .offset(offset)

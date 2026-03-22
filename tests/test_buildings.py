@@ -1,11 +1,15 @@
 """
 Тесты:
   GET /buildings                             - список зданий
+  GET /buildings/{id}                        - одно здание по ID
   GET /buildings/{building_id}/organizations - организации в здании
 
 Формат ответа":
   GET /buildings и GET /buildings/{id}/organizations возвращают Page:
   {"items": [...], "count": N, "limit": N, "offset": N}
+
+  GET /buildings/{id} возвращает BuildingOut:
+  {"id": N, "address": "...", "latitude": N, "longitude": N}
 """
 import pytest
 
@@ -60,6 +64,29 @@ async def test_list_buildings_response_schema(client, db_session):
     assert building["address"] == "Test St 42"
     assert building["latitude"] == 55.75
     assert building["longitude"] == 37.62
+
+
+# ---------------------------------------------------------------------------
+# GET /buildings/{id}
+# ---------------------------------------------------------------------------
+
+async def test_get_building_by_id_returns_200_and_correct_fields(client, db_session):
+    b = await make_building(db_session, lat=55.75, lon=37.62, address="ul. Lenina 1")
+    await db_session.commit()
+
+    resp = await client.get(f"/buildings/{b.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == b.id
+    assert data["address"] == "ul. Lenina 1"
+    assert data["latitude"] == 55.75
+    assert data["longitude"] == 37.62
+
+
+async def test_get_building_by_id_not_found_returns_404(client):
+    resp = await client.get("/buildings/99999")
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Building not found"
 
 
 # ---------------------------------------------------------------------------

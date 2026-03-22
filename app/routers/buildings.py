@@ -33,6 +33,17 @@ async def list_buildings(
     )
 
 
+@router.get("/{building_id}", response_model=BuildingOut)
+async def get_building(
+    building_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> BuildingOut:
+    building = await db.get(Building, building_id)
+    if building is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    return building
+
+
 @router.get(
     "/{building_id}/organizations",
     response_model=Page[OrganizationOut],

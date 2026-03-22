@@ -1,5 +1,6 @@
 import os
 from collections.abc import AsyncGenerator
+from typing import Optional
 
 from fastapi import Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,8 +15,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def verify_api_key(x_api_key: str = Header(...)) -> None:
-    if not API_KEY or x_api_key != API_KEY:
-        raise HTTPException(
-            status_code=403, detail="Invalid or missing API key"
-        )
+async def verify_api_key(x_api_key: Optional[str] = Header(None)) -> None:
+    if x_api_key is None:
+        raise HTTPException(status_code=401, detail="API key missing")
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")

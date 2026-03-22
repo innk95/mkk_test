@@ -70,14 +70,14 @@ def _apply_filters(
 async def list_organizations(
     name: str | None = None,
     # переменные для поиска по радиусу
-    lat: float | None = None,
-    lon: float | None = None,
-    radius_km: float | None = None,
+    lat: float | None = Query(None, ge=-90, le=90),
+    lon: float | None = Query(None, ge=-180, le=180),
+    radius_km: float | None = Query(None, gt=0),
     # переменные для поиска по прямоугольнику
-    lat_min: float | None = None,
-    lat_max: float | None = None,
-    lon_min: float | None = None,
-    lon_max: float | None = None,
+    lat_min: float | None = Query(None, ge=-90, le=90),
+    lat_max: float | None = Query(None, ge=-90, le=90),
+    lon_min: float | None = Query(None, ge=-180, le=180),
+    lon_max: float | None = Query(None, ge=-180, le=180),
     limit: int = Query(10, ge=1),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
