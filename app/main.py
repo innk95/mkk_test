@@ -2,7 +2,9 @@ from fastapi import FastAPI
 
 from app.routers import activities, buildings, organizations
 
-app = FastAPI()
+app = FastAPI(
+    description="**X-API-KEY для тестирования:** prod - `your_api_key`; dev - `testkey`",
+)
 
 app.include_router(buildings.router)
 app.include_router(organizations.router)
